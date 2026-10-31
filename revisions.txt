@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py)
+9. [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow
+8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
 7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
 6. [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py (ea4e210)
 5. [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
@@ -19,7 +20,27 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py)
+9. [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - README.md
+  - revisions.txt
+
+Summary:
+  Added `README.md` documenting:
+  - Quick start instructions for launching the zero-dependency Python 3 server
+    (`python3 serve.py`) and running the test suite (`python3 test_kanban.py`).
+  - The two-branch Git architecture separating code on `main` from `data/*.json`
+    datastore commits on `private_data`.
+  - Complete feature guide covering Board View, GTD Lists View, Multi-Database
+    management, RTM import, Tabular List View, Text-Only View, and keyboard shortcuts.
+
+--------------------------------------------------------------------------------
+8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
