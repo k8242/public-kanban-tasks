@@ -31,6 +31,19 @@ cd /Users/k8242/Coding/antigravity2-local/kanban_py
 python3 test_kanban.py
 ```
 
+### Viewing Server Logs Remotely or via SSH
+
+Server events, warnings, and errors are automatically written to a rotating log file at `logs/server.log` (up to 2 MB × 3 backups, excluded from Git via `.gitignore`):
+
+- **From any Browser (Phone, iPad, or Desktop)**:
+  - JSON format: `http://localhost:8080/api/logs?lines=100`
+  - Plain-text format: `http://localhost:8080/api/logs?format=text&lines=100`
+  - Filter by level (`ERROR`, `WARNING`, `INFO`): `http://localhost:8080/api/logs?format=text&level=ERROR`
+- **Via SSH / Terminal**:
+  ```bash
+  tail -f /Users/k8242/Coding/antigravity2-local/kanban_py/logs/server.log
+  ```
+
 ---
 
 ## Git-Backed Versioning & `private_data` Branch Isolation

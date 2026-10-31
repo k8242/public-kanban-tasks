@@ -11,12 +11,15 @@ import copy
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import re
 import signal
 import subprocess
 import sys
 import threading
+import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
@@ -24,13 +27,71 @@ PORT: int = int(os.environ.get("PORT", "8080"))
 ROOT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR: str = os.path.join(ROOT_DIR, "data")
 DATA_FILE: str = os.path.join(DATA_DIR, "board.json")
+LOG_DIR: str = os.path.join(ROOT_DIR, "logs")
+LOG_FILE: str = os.path.join(LOG_DIR, "server.log")
+LOG_MAX_BYTES: int = 2 * 1024 * 1024  # 2 MB per rotating log file
+LOG_BACKUP_COUNT: int = 3
 PRIVATE_DATA_BRANCH: str = "private_data"
 PROTECTED_DB_NAMES: Tuple[str, ...] = ("default", "board")
 
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Re-entrant lock for thread-safe file & git operations
 DATA_MUTEX = threading.RLock()
+
+
+def configure_server_logger() -> logging.Logger:
+    """Configure rotating file logger (`logs/server.log`) for server events and errors."""
+    srv_logger = logging.getLogger("kanban_server")
+    if srv_logger.handlers:
+        return srv_logger
+    srv_logger.setLevel(logging.INFO)
+    srv_logger.propagate = False
+    formatter = logging.Formatter(
+        fmt="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    )
+    formatter.converter = time.gmtime if "time" in sys.modules else None
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=LOG_MAX_BYTES,
+        backupCount=LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(formatter)
+    srv_logger.addHandler(file_handler)
+    return srv_logger
+
+
+logger: logging.Logger = configure_server_logger()
+
+
+def log_server_event(level: str, message: str) -> None:
+    """Record a timestamped server event or error to `logs/server.log`."""
+    level_upper = level.upper()
+    if level_upper == "ERROR":
+        logger.error(message)
+    elif level_upper == "WARNING":
+        logger.warning(message)
+    else:
+        logger.info(message)
+
+
+def read_recent_logs(limit: int = 100, level_filter: Optional[str] = None) -> List[str]:
+    """Return the most recent `limit` lines from `logs/server.log`, optionally filtered by level."""
+    if not os.path.exists(LOG_FILE):
+        return []
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as fh:
+            lines = [line.rstrip("\r\n") for line in fh.readlines()]
+        if level_filter:
+            token = f"[{level_filter.strip().upper()}]"
+            lines = [line for line in lines if token in line]
+        safe_limit = max(1, min(limit, 2000))
+        return lines[-safe_limit:]
+    except Exception as e:
+        return [f"Error reading log file: {e}"]
 
 # Git commit batch configuration: defaults to 12 (every dozen changes), configurable via ENV or /api/config
 git_commit_batch_size: int = int(os.environ.get("GIT_COMMIT_BATCH_SIZE", "12"))
@@ -302,9 +363,10 @@ def record_git_commit(message: str, target_file: Optional[str] = None) -> Option
             capture_output=True,
             check=True,
         )
+        log_server_event("INFO", f"Committed to {PRIVATE_DATA_BRANCH} ({new_commit[:7]}): {message}")
         return new_commit
-    except Exception:
-        # Non-fatal if git is unavailable or encounters an error
+    except Exception as e:
+        log_server_event("ERROR", f"Git commit failed on {PRIVATE_DATA_BRANCH}: {e}")
         return None
 
 
@@ -320,7 +382,9 @@ def read_board_data(db_name: str = "default") -> Dict[str, Any]:
                 data["database"] = clean
                 return data
             except Exception as e:
-                sys.stderr.write(f"Error reading {target_file}: {e}. Using default seed.\n")
+                err_msg = f"Error reading {target_file}: {e}. Using default seed."
+                sys.stderr.write(f"{err_msg}\n")
+                log_server_event("ERROR", err_msg)
 
         if clean == "sample":
             seed = copy.deepcopy(SAMPLE_SEED)
@@ -372,6 +436,10 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         """Suppress per-request stdout noise during normal operation and tests."""
         pass
 
+    def log_error(self, format: str, *args: Any) -> None:
+        """Record HTTP errors to `logs/server.log`."""
+        log_server_event("ERROR", f"HTTP {self.path}: {format % args}")
+
     def send_cors_headers(self) -> None:
         """Attach permissive CORS headers for local and cross-device access."""
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -380,10 +448,23 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
 
     def send_json(self, status_code: int, payload: Dict[str, Any]) -> None:
         """Serialize `payload` as UTF-8 JSON and write the HTTP response."""
+        if status_code >= 400 and "error" in payload:
+            level = "ERROR" if status_code >= 500 else "WARNING"
+            log_server_event(level, f"{getattr(self, 'command', 'HTTP')} {self.path} -> {status_code}: {payload['error']}")
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status_code)
         self.send_cors_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def send_text(self, status_code: int, text_body: str) -> None:
+        """Write a plain-text UTF-8 HTTP response."""
+        body = text_body.encode("utf-8")
+        self.send_response(status_code)
+        self.send_cors_headers()
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -430,11 +511,15 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
                     "mode": "server-hosted",
                     "runtime": "python",
                     "storageFile": "data/board.json",
+                    "logFile": "logs/server.log",
                     "taskCount": len(data.get("tasks") or []),
                     "columnsCount": len(data.get("columns") or []),
                     "lastUpdated": data.get("updatedAt"),
                 },
             )
+            return
+        if path == "/api/logs":
+            self.handle_get_logs(query)
             return
         if path == "/api/config":
             self.send_json(
@@ -652,6 +737,26 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self.send_json(400, {"error": str(e)})
 
+    def handle_get_logs(self, query: Dict[str, str]) -> None:
+        """Return recent server log entries in JSON or plain-text format for remote inspection."""
+        try:
+            lines_limit = int(query.get("lines") or "100")
+        except ValueError:
+            lines_limit = 100
+        level_filter = query.get("level") or None
+        entries = read_recent_logs(limit=lines_limit, level_filter=level_filter)
+        if (query.get("format") or "").strip().lower() == "text":
+            self.send_text(200, "\n".join(entries) + ("\n" if entries else ""))
+            return
+        self.send_json(
+            200,
+            {
+                "logFile": "logs/server.log",
+                "count": len(entries),
+                "lines": entries,
+            },
+        )
+
 
 def run_server() -> None:
     """Bind to an available port starting from `PORT` and start serving HTTP requests."""
@@ -683,12 +788,16 @@ def run_server() -> None:
     read_board_data("default")
     read_board_data("sample")
 
+    log_server_event("INFO", f"Kanban Python server started on port {active_port} (datastore: {DATA_FILE})")
+
     print("=======================================================")
     print("  Kanban Python Server-Hosted Datastore Ready!")
     print(f"  Access the App at: http://localhost:{active_port}")
     print(f"  Datastore File: {DATA_FILE}")
+    print(f"  Server Log File: {LOG_FILE}")
     print(f"  - REST API: http://localhost:{active_port}/api/board")
     print(f"  - Health Check: http://localhost:{active_port}/api/health")
+    print(f"  - Remote Logs: http://localhost:{active_port}/api/logs")
     print("=======================================================")
 
     server.serve_forever()

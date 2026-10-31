@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt
+11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint
+10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt (6de7fbc)
 9.  [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow (0e8136f)
 8.  [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
 7.  [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
@@ -21,7 +22,34 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt
+11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - .gitignore
+  - serve.py
+  - test_kanban.py
+  - README.md
+  - revisions.txt
+
+Summary:
+  Added persistent rotating server logging (`logs/server.log`, 2 MB x 3 backups)
+  and a remote HTTP log inspection endpoint (`GET /api/logs`):
+  - Configured `RotatingFileHandler` in `serve.py` via `configure_server_logger()`,
+    `log_server_event()`, and `read_recent_logs()`.
+  - Logged HTTP errors (`log_error`), 4xx/5xx API responses (`send_json`),
+    datastore read failures, server startup, and `private_data` Git commits.
+  - Added `GET /api/logs` supporting `?lines=N`, `?level=ERROR|WARNING|INFO`,
+    and `?format=text` (plain text) or JSON output for easy remote browser or
+    SSH (`tail -f logs/server.log`) access.
+  - Updated `.gitignore` to ignore `logs/` and `*.log.*`, added tests in
+    `test_kanban.py`, and documented remote log usage in `README.md`.
+
+--------------------------------------------------------------------------------
+10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt (6de7fbc)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity

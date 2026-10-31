@@ -234,6 +234,18 @@ def test_datastore_and_python_api() -> Tuple[Dict[str, Any], Dict[str, Any]]:
         st_del_def, _ = invoke_api("/api/databases?name=default", method="DELETE")
         assert st_def == 400 and st_board == 400 and st_del_def == 400
 
+        # Verify server error logging to logs/server.log and remote /api/logs endpoint
+        st_logs, body_logs = invoke_api("/api/logs?lines=50", method="GET")
+        assert st_logs == 200 and body_logs.get("logFile") == "logs/server.log"
+        assert isinstance(body_logs.get("lines"), list) and len(body_logs["lines"]) > 0
+        assert any("Cannot delete default database" in line for line in body_logs["lines"])
+
+        txt_handler = InMemoryHandler("/api/logs?format=text&level=WARNING", method="GET")
+        txt_handler.do_GET()
+        txt_logs = txt_handler.wfile.getvalue().decode("utf-8")
+        assert txt_handler.response_status == 200 and "[WARNING]" in txt_logs
+        print("  ✓ Server rotating file logger (logs/server.log) and remote /api/logs (JSON & plain-text) verified")
+
         board_after_check = read_json("data/board.json")
         sample_after_check = read_json("data/sample.json")
         assert len(board_after_check["tasks"]) == 0
