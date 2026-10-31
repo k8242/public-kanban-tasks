@@ -4,15 +4,16 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-9. [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow
-8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
-7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
-6. [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py (ea4e210)
-5. [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
-4. [Batch 2.1] chore(data): seed initial data/*.json files on private_data branch (86499f3)
-3. [Batch 1.3] refactor: readability cleanup for frontend module headers and constants (3c87f2a)
-2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/) (f74511e)
-1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt (1ef804d)
+10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt
+9.  [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow (0e8136f)
+8.  [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
+7.  [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
+6.  [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py (ea4e210)
+5.  [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
+4.  [Batch 2.1] chore(data): seed initial data/*.json files on private_data branch (86499f3)
+3.  [Batch 1.3] refactor: readability cleanup for frontend module headers and constants (3c87f2a)
+2.  [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/) (f74511e)
+1.  [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt (1ef804d)
 
 
 ================================================================================
@@ -20,7 +21,30 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-9. [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow
+10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - test_kanban.py
+  - revisions.txt
+
+Summary:
+  Readability cleanup pass following Batch 4 test suite and documentation:
+  - Structured `test_kanban.py` into modular, well-typed test functions
+    (`test_required_files_and_html`, `test_datastore_and_python_api`,
+    `test_zoom_scaling`, `test_feature_requirements`,
+    `test_git_branch_and_manifest_integrity`, and `main()`) with `read_text()`
+    and `read_json()` helpers.
+  - Added `/api/config` verification and PEP 484 type annotations throughout
+    `test_kanban.py`.
+  - Updated `revisions.txt` with commit hash `0e8136f` for Batch 4.2 and added
+    Batch 4.3.
+
+--------------------------------------------------------------------------------
+9. [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow (0e8136f)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
