@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/)
+3. [Batch 1.3] refactor: readability cleanup for frontend module headers and constants
+2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/) (f74511e)
 1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt (1ef804d)
 
 
@@ -13,7 +14,26 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/)
+3. [Batch 1.3] refactor: readability cleanup for frontend module headers and constants
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - js/list-view.js
+  - js/models.js
+  - revisions.txt
+
+Summary:
+  Readability cleanup pass following Batch 1 frontend migration:
+  - Removed duplicate JSDoc comment opener (`/**`) in `js/list-view.js`.
+  - Updated `js/models.js` header documentation for the Python Backend Edition and
+    defined explicit `DATABASES_API_BASE` constant alongside `API_BASE`.
+  - Updated `revisions.txt` with commit hash `f74511e` for Batch 1.2 and added Batch 1.3.
+
+--------------------------------------------------------------------------------
+2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/) (f74511e)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
@@ -25,6 +45,7 @@ Files:
   - css/style.css, css/board.css, css/list-view.css, css/table.css, css/text-view.css
   - js/models.js, js/app.js, js/board-view.js, js/list-view.js, js/table-view.js,
     js/text-view.js, js/zoom-canvas.js
+  - revisions.txt
 
 Summary:
   Ported the complete cross-platform Kanban frontend application, including:

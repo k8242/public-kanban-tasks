@@ -1,10 +1,12 @@
 /**
- * Kanban Models & Store
- * Features Server-Hosted Data Store with offline-first localStorage fallback and multi-device polling sync.
+ * Kanban Models & Store (Python Backend Edition)
+ * Features Server-Hosted Data Store with offline-first localStorage fallback,
+ * multi-database management, and multi-device polling sync.
  */
 
 const STORAGE_KEY = 'universal_kanban_data_v1';
 const API_BASE = '/api/board';
+const DATABASES_API_BASE = '/api/databases';
 
 const TAG_PALETTE = [
   '#3b82f6', // blue

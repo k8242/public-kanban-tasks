@@ -1,5 +1,4 @@
 /**
-/**
  * GTD Inbox & Lists View Controller & Persistent Side Panel
  * Features Left Sidebar (Inbox, Today, Tomorrow, This Week, Lists, Tags)
  * and Task Stream with quick-add, completion checkboxes, priority stripes, and Incomplete/Completed filter.
