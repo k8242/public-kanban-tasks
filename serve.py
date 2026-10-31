@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Kanban Python Backend Server
-Zero-dependency pure Python 3 HTTP server providing static files + REST datastore API.
+Kanban Python Backend Server.
+
+Zero-dependency pure Python 3 HTTP server providing static asset serving and a
+RESTful JSON datastore API with multi-database support and isolated Git auto-commits
+to the `private_data` branch.
 """
 
+import copy
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -13,32 +17,35 @@ import signal
 import subprocess
 import sys
 import threading
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-PORT = int(os.environ.get("PORT", "8080"))
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-DATA_FILE = os.path.join(DATA_DIR, "board.json")
-PRIVATE_DATA_BRANCH = "private_data"
+PORT: int = int(os.environ.get("PORT", "8080"))
+ROOT_DIR: str = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR: str = os.path.join(ROOT_DIR, "data")
+DATA_FILE: str = os.path.join(DATA_DIR, "board.json")
+PRIVATE_DATA_BRANCH: str = "private_data"
+PROTECTED_DB_NAMES: Tuple[str, ...] = ("default", "board")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Re-entrant lock for thread-safe datastore operations
+# Re-entrant lock for thread-safe file & git operations
 DATA_MUTEX = threading.RLock()
 
 # Git commit batch configuration: defaults to 12 (every dozen changes), configurable via ENV or /api/config
-git_commit_batch_size = int(os.environ.get("GIT_COMMIT_BATCH_SIZE", "12"))
-pending_change_count = 0
+git_commit_batch_size: int = int(os.environ.get("GIT_COMMIT_BATCH_SIZE", "12"))
+pending_change_count: int = 0
 
 # Agent and Model details included in all git submits
-AGENT_MODEL_DETAILS = "Agent: Antigravity\nModel: Gemini 4 Argon (Medium)"
+AGENT_MODEL_DETAILS: str = "Agent: Antigravity\nModel: Gemini 4 Argon (Medium)"
 
 
-def utc_now_iso():
+def utc_now_iso() -> str:
+    """Return current UTC timestamp formatted in ISO-8601 (`YYYY-MM-DDTHH:MM:SSZ`)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-SAMPLE_SEED = {
+SAMPLE_SEED: Dict[str, Any] = {
     "version": 1,
     "database": "sample",
     "updatedAt": utc_now_iso(),
@@ -145,47 +152,73 @@ SAMPLE_SEED = {
     ],
 }
 
-DEFAULT_SEED = {
+DEFAULT_SEED: Dict[str, Any] = {
     "version": 1,
     "database": "default",
     "updatedAt": utc_now_iso(),
-    "columns": [dict(c) for c in SAMPLE_SEED["columns"]],
+    "columns": copy.deepcopy(SAMPLE_SEED["columns"]),
     "tags": {},
     "trash": [],
     "tasks": [],
 }
 
 
-def sanitize_db_name(name):
+def sanitize_db_name(name: Optional[Any]) -> str:
+    """Sanitize a database identifier to lowercase alphanumeric, underscore, or hyphen."""
     raw = str(name or "").strip().lower()
     clean = re.sub(r"[^a-z0-9_\-]", "", raw)
     return clean if clean else "default"
 
 
-def db_file_path(name):
+def normalize_db_alias(name: Optional[Any]) -> str:
+    """Normalize 'board' or empty database names to 'default'."""
     clean = sanitize_db_name(name)
-    if clean in ("default", "board"):
+    return "default" if clean == "board" else clean
+
+
+def db_file_path(name: Optional[Any]) -> str:
+    """Resolve the JSON datastore path for the given database name."""
+    clean = sanitize_db_name(name)
+    if clean in PROTECTED_DB_NAMES:
         default_json = os.path.join(DATA_DIR, "default.json")
         return default_json if os.path.exists(default_json) else DATA_FILE
     return os.path.join(DATA_DIR, f"{clean}.json")
 
 
-def list_databases():
+def list_databases() -> List[str]:
+    """List all available JSON databases in `data/`, always including `'default'`."""
     names = {"default"}
     if os.path.isdir(DATA_DIR):
         for fname in os.listdir(DATA_DIR):
             if not fname.endswith(".json") or ".tmp." in fname:
                 continue
             base = fname[:-5]
-            if base in ("board", "default"):
+            if base in PROTECTED_DB_NAMES:
                 names.add("default")
             else:
                 names.add(base)
     return sorted(names)
 
 
-def record_git_commit(message, target_file=None):
-    """Commit data/*.json changes exclusively to the private_data branch without touching main."""
+def build_empty_database_seed(db_name: str) -> Dict[str, Any]:
+    """Construct a clean empty database seed dictionary for `db_name`."""
+    return {
+        "version": 1,
+        "database": db_name,
+        "columns": copy.deepcopy(DEFAULT_SEED["columns"]),
+        "tags": {},
+        "favoriteTags": {},
+        "trash": [],
+        "tasks": [],
+        "updatedAt": utc_now_iso(),
+    }
+
+
+def record_git_commit(message: str, target_file: Optional[str] = None) -> Optional[str]:
+    """
+    Commit `data/*.json` changes exclusively to the `private_data` branch without
+    modifying the `main` branch or the default working tree index.
+    """
     git_dir = os.path.join(ROOT_DIR, ".git")
     if not os.path.isdir(git_dir):
         return None
@@ -275,10 +308,9 @@ def record_git_commit(message, target_file=None):
         return None
 
 
-def read_board_data(db_name="default"):
-    clean = sanitize_db_name(db_name)
-    if clean == "board":
-        clean = "default"
+def read_board_data(db_name: str = "default") -> Dict[str, Any]:
+    """Load board JSON data for `db_name`, initializing its seed file if missing."""
+    clean = normalize_db_alias(db_name)
     target_file = db_file_path(clean)
     with DATA_MUTEX:
         if os.path.exists(target_file):
@@ -291,30 +323,25 @@ def read_board_data(db_name="default"):
                 sys.stderr.write(f"Error reading {target_file}: {e}. Using default seed.\n")
 
         if clean == "sample":
-            seed = json.loads(json.dumps(SAMPLE_SEED))
+            seed = copy.deepcopy(SAMPLE_SEED)
         elif clean == "default":
-            seed = json.loads(json.dumps(DEFAULT_SEED))
+            seed = copy.deepcopy(DEFAULT_SEED)
         else:
-            seed = {
-                "version": 1,
-                "database": clean,
-                "columns": [dict(c) for c in DEFAULT_SEED["columns"]],
-                "tags": {},
-                "favoriteTags": {},
-                "trash": [],
-                "tasks": [],
-                "updatedAt": utc_now_iso(),
-            }
+            seed = build_empty_database_seed(clean)
         seed["database"] = clean
         write_board_data(seed, f"Initialize database [{clean}]", force_commit=True, db_name=clean)
         return seed
 
 
-def write_board_data(data, commit_msg=None, force_commit=False, db_name="default"):
+def write_board_data(
+    data: Dict[str, Any],
+    commit_msg: Optional[str] = None,
+    force_commit: bool = False,
+    db_name: str = "default",
+) -> Dict[str, Any]:
+    """Atomically write `data` to disk and conditionally record a Git commit on `private_data`."""
     global pending_change_count
-    clean = sanitize_db_name(db_name)
-    if clean == "board":
-        clean = "default"
+    clean = normalize_db_alias(db_name)
     target_file = db_file_path(clean)
     data["updatedAt"] = utc_now_iso()
     data["database"] = clean
@@ -336,19 +363,23 @@ def write_board_data(data, commit_msg=None, force_commit=False, db_name="default
 
 
 class KanbanRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
+    """HTTP request handler serving both REST API endpoints and static frontend files."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=ROOT_DIR, **kwargs)
 
-    def log_message(self, format, *args):
-        # Quiet logging like WEBrick WARN level
+    def log_message(self, format: str, *args: Any) -> None:
+        """Suppress per-request stdout noise during normal operation and tests."""
         pass
 
-    def send_cors_headers(self):
+    def send_cors_headers(self) -> None:
+        """Attach permissive CORS headers for local and cross-device access."""
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-    def send_json(self, status_code, payload):
+    def send_json(self, status_code: int, payload: Dict[str, Any]) -> None:
+        """Serialize `payload` as UTF-8 JSON and write the HTTP response."""
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status_code)
         self.send_cors_headers()
@@ -357,30 +388,33 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def read_body_text(self):
+    def read_body_text(self) -> str:
+        """Read and decode the request body according to `Content-Length`."""
         length = int(self.headers.get("Content-Length", "0") or "0")
         if length <= 0:
             return ""
         return self.rfile.read(length).decode("utf-8")
 
-    def parse_url(self):
+    def parse_url(self) -> Tuple[str, Dict[str, str]]:
+        """Parse `self.path` into a normalized route path and single-value query dict."""
         parsed = urlparse(self.path)
         clean_path = parsed.path.rstrip("/") or "/"
         query_raw = parse_qs(parsed.query, keep_blank_values=True)
         query = {k: v[0] if v else "" for k, v in query_raw.items()}
         return clean_path, query
 
-    def do_OPTIONS(self):
+    def do_OPTIONS(self) -> None:
+        """Handle CORS preflight requests."""
         self.send_response(204)
         self.send_cors_headers()
         self.end_headers()
 
-    def do_GET(self):
+    def do_GET(self) -> None:
+        """Route GET requests for API endpoints or fall back to static file serving."""
         path, query = self.parse_url()
         if path == "/api/board":
             db_name = query.get("db") or "default"
-            data = read_board_data(db_name)
-            self.send_json(200, data)
+            self.send_json(200, read_board_data(db_name))
             return
         if path == "/api/databases":
             dbs = list_databases()
@@ -413,7 +447,8 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
-    def do_POST(self):
+    def do_POST(self) -> None:
+        """Route POST requests for board save, database creation, reset, and config."""
         path, query = self.parse_url()
         if path == "/api/board":
             self.handle_save_board(query)
@@ -424,7 +459,7 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/reset":
             with DATA_MUTEX:
                 write_board_data(
-                    json.loads(json.dumps(DEFAULT_SEED)),
+                    copy.deepcopy(DEFAULT_SEED),
                     "Reset board to default seed",
                     force_commit=True,
                     db_name="default",
@@ -436,21 +471,24 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
             return
         self.send_json(404, {"error": "Not found"})
 
-    def do_PUT(self):
+    def do_PUT(self) -> None:
+        """Route PUT requests to save board state."""
         path, query = self.parse_url()
         if path == "/api/board":
             self.handle_save_board(query)
             return
         self.send_json(404, {"error": "Not found"})
 
-    def do_DELETE(self):
+    def do_DELETE(self) -> None:
+        """Route DELETE requests to remove a non-default database."""
         path, query = self.parse_url()
         if path == "/api/databases":
             self.handle_delete_database(query)
             return
         self.send_json(404, {"error": "Not found"})
 
-    def handle_save_board(self, query):
+    def handle_save_board(self, query: Dict[str, str]) -> None:
+        """Validate and persist an updated board payload for the target database."""
         try:
             body_text = self.read_body_text()
             payload = json.loads(body_text)
@@ -463,13 +501,11 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
                 if payload.get("database") and str(payload.get("database")).strip()
                 else query.get("db")
             )
-            clean_db = sanitize_db_name(raw_db)
-            if clean_db == "board":
-                clean_db = "default"
+            clean_db = normalize_db_alias(raw_db)
             target_file = db_file_path(clean_db)
 
             with DATA_MUTEX:
-                current = {}
+                current: Dict[str, Any] = {}
                 if os.path.exists(target_file):
                     try:
                         with open(target_file, "r", encoding="utf-8") as f:
@@ -504,13 +540,14 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self.send_json(500, {"error": str(e)})
 
-    def handle_create_database(self, query):
+    def handle_create_database(self, query: Dict[str, str]) -> None:
+        """Create a new named database (either empty or copied from an existing database)."""
         try:
             body_text = self.read_body_text()
             payload = json.loads(body_text) if body_text.strip() else {}
             raw_name = str(payload.get("name") or query.get("name") or "").strip()
             name = re.sub(r"[^a-z0-9_\-]", "", raw_name.lower())
-            if not name or name in ("default", "board"):
+            if not name or name in PROTECTED_DB_NAMES:
                 self.send_json(
                     400,
                     {"error": "Invalid database name: cannot create or overwrite 'default' database"},
@@ -520,9 +557,7 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
             copy_from = payload.get("copyFrom") or query.get("copyFrom")
             with DATA_MUTEX:
                 if copy_from and copy_from != "none" and str(copy_from).strip() != "":
-                    clean_copy = sanitize_db_name(copy_from)
-                    if clean_copy == "board":
-                        clean_copy = "default"
+                    clean_copy = normalize_db_alias(copy_from)
                     copy_file = db_file_path(clean_copy)
                     source_data = DEFAULT_SEED
                     if os.path.exists(copy_file):
@@ -534,11 +569,11 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
                     seed = {
                         "version": 1,
                         "database": name,
-                        "columns": source_data.get("columns") or DEFAULT_SEED["columns"],
-                        "tags": source_data.get("tags") or {},
-                        "favoriteTags": source_data.get("favoriteTags") or {},
+                        "columns": copy.deepcopy(source_data.get("columns") or DEFAULT_SEED["columns"]),
+                        "tags": copy.deepcopy(source_data.get("tags") or {}),
+                        "favoriteTags": copy.deepcopy(source_data.get("favoriteTags") or {}),
                         "trash": [],
-                        "tasks": [dict(t) if isinstance(t, dict) else t for t in (source_data.get("tasks") or [])],
+                        "tasks": [copy.deepcopy(t) for t in (source_data.get("tasks") or [])],
                         "updatedAt": utc_now_iso(),
                     }
                     write_board_data(
@@ -548,16 +583,7 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
                         db_name=name,
                     )
                 else:
-                    seed = {
-                        "version": 1,
-                        "database": name,
-                        "columns": [dict(c) for c in DEFAULT_SEED["columns"]],
-                        "tags": {},
-                        "favoriteTags": {},
-                        "trash": [],
-                        "tasks": [],
-                        "updatedAt": utc_now_iso(),
-                    }
+                    seed = build_empty_database_seed(name)
                     write_board_data(
                         seed,
                         f"Kanban create empty database [{name}]",
@@ -577,7 +603,8 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self.send_json(400, {"error": str(e)})
 
-    def handle_delete_database(self, query):
+    def handle_delete_database(self, query: Dict[str, str]) -> None:
+        """Delete a custom named database while protecting `'default'` and `'board'`."""
         raw_name = str(query.get("name") or "").strip()
         if not raw_name:
             body_text = self.read_body_text()
@@ -589,7 +616,7 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
                     raw_name = ""
 
         name = re.sub(r"[^a-z0-9_\-]", "", raw_name.lower())
-        if not name or name in ("default", "board"):
+        if not name or name in PROTECTED_DB_NAMES:
             self.send_json(400, {"error": "Cannot delete default database"})
             return
 
@@ -601,7 +628,8 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
 
         self.send_json(200, {"success": True, "name": name, "databases": list_databases()})
 
-    def handle_update_config(self):
+    def handle_update_config(self) -> None:
+        """Update server Git batch size or trigger an immediate manual commit."""
         global git_commit_batch_size
         try:
             body_text = self.read_body_text() or "{}"
@@ -625,9 +653,10 @@ class KanbanRequestHandler(SimpleHTTPRequestHandler):
             self.send_json(400, {"error": str(e)})
 
 
-def run_server():
+def run_server() -> None:
+    """Bind to an available port starting from `PORT` and start serving HTTP requests."""
     desired_port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
-    server = None
+    server: Optional[ThreadingHTTPServer] = None
     active_port = desired_port
 
     while active_port <= desired_port + 10:
@@ -643,7 +672,7 @@ def run_server():
     if not server:
         raise RuntimeError(f"Could not find an available port between {desired_port} and {desired_port + 10}.")
 
-    def handle_shutdown(signum, frame):
+    def handle_shutdown(signum: int, frame: Any) -> None:
         if pending_change_count > 0:
             record_git_commit(f"Final Kanban batch update ({pending_change_count} changes on shutdown)")
         threading.Thread(target=server.shutdown, daemon=True).start()
