@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders
+15. [Batch 5.5] chore: revert LICENSE copyright holder to original
+14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders (7a40aea)
 13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs (ca6d90d)
 12. [Batch 5.2] chore: merge origin/main LICENSE into main (83679a1)
 11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint (3a4610d)
@@ -25,7 +26,21 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders
+15. [Batch 5.5] chore: revert LICENSE copyright holder to original
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - LICENSE
+  - revisions.txt
+
+Summary:
+  Reverted `LICENSE` to its original copyright line from `origin/main`.
+
+--------------------------------------------------------------------------------
+14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders (7a40aea)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
