@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-5. [Batch 3.1] feat: implement core Python backend server (serve.py)
+6. [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py
+5. [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
 4. [Batch 2.1] chore(data): seed initial data/*.json files on private_data branch (86499f3)
 3. [Batch 1.3] refactor: readability cleanup for frontend module headers and constants (3c87f2a)
 2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/) (f74511e)
@@ -16,7 +17,31 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-5. [Batch 3.1] feat: implement core Python backend server (serve.py)
+6. [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - serve.py
+  - revisions.txt
+
+Summary:
+  Implemented `record_git_commit(message, target_file)` in `serve.py` using Git
+  plumbing (`read-tree`, `add -f`, `rm --cached`, `write-tree`, `commit-tree`,
+  and `update-ref refs/heads/private_data`) with a dedicated `.git/private_data.index`
+  file. This ensures:
+  - All `data/*.json` changes (task updates, database creation, database deletion,
+    board resets, and shutdown flushes) are committed directly to the `private_data`
+    branch.
+  - The `main` branch and working tree index are never touched or polluted by
+    `data/*.json` commits.
+  - Every commit message automatically includes `Agent: Antigravity` and
+    `Model: Gemini 4 Argon (Medium)`.
+
+--------------------------------------------------------------------------------
+5. [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity

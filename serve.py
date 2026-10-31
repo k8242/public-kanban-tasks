@@ -185,8 +185,94 @@ def list_databases():
 
 
 def record_git_commit(message, target_file=None):
-    """Placeholder for Git auto-commit engine (enhanced in Commit 3.2)."""
-    pass
+    """Commit data/*.json changes exclusively to the private_data branch without touching main."""
+    git_dir = os.path.join(ROOT_DIR, ".git")
+    if not os.path.isdir(git_dir):
+        return None
+    try:
+        file_to_commit = os.path.abspath(target_file or DATA_FILE)
+        rel_path = os.path.relpath(file_to_commit, ROOT_DIR)
+        idx_file = os.path.join(git_dir, "private_data.index")
+        env = os.environ.copy()
+        env["GIT_INDEX_FILE"] = idx_file
+
+        ref_name = f"refs/heads/{PRIVATE_DATA_BRANCH}"
+        parent_res = subprocess.run(
+            ["git", "-C", ROOT_DIR, "rev-parse", "--verify", "-q", ref_name],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        parent_commit = parent_res.stdout.strip() if parent_res.returncode == 0 else None
+
+        if parent_commit:
+            subprocess.run(
+                ["git", "-C", ROOT_DIR, "read-tree", parent_commit],
+                env=env,
+                capture_output=True,
+                check=False,
+            )
+        elif os.path.exists(idx_file):
+            os.remove(idx_file)
+
+        if os.path.exists(file_to_commit):
+            subprocess.run(
+                ["git", "-C", ROOT_DIR, "add", "-f", "--", rel_path],
+                env=env,
+                capture_output=True,
+                check=False,
+            )
+        else:
+            subprocess.run(
+                ["git", "-C", ROOT_DIR, "rm", "-f", "--ignore-unmatch", "--cached", "--", rel_path],
+                env=env,
+                capture_output=True,
+                check=False,
+            )
+
+        tree_res = subprocess.run(
+            ["git", "-C", ROOT_DIR, "write-tree"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        new_tree = tree_res.stdout.strip()
+
+        if parent_commit:
+            parent_tree_res = subprocess.run(
+                ["git", "-C", ROOT_DIR, "rev-parse", f"{parent_commit}^{{tree}}"],
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            if parent_tree_res.returncode == 0 and parent_tree_res.stdout.strip() == new_tree:
+                return parent_commit
+
+        full_message = f"{message}\n\n{AGENT_MODEL_DETAILS}"
+        commit_cmd = ["git", "-C", ROOT_DIR, "commit-tree", new_tree]
+        if parent_commit:
+            commit_cmd.extend(["-p", parent_commit])
+        commit_cmd.extend(["-m", full_message])
+
+        commit_res = subprocess.run(
+            commit_cmd,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        new_commit = commit_res.stdout.strip()
+        subprocess.run(
+            ["git", "-C", ROOT_DIR, "update-ref", ref_name, new_commit],
+            env=env,
+            capture_output=True,
+            check=True,
+        )
+        return new_commit
+    except Exception:
+        # Non-fatal if git is unavailable or encounters an error
+        return None
 
 
 def read_board_data(db_name="default"):
