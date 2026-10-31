@@ -1,0 +1,28 @@
+================================================================================
+KANBAN PYTHON EDITION — REVISION HISTORY
+================================================================================
+
+TABLE OF CONTENTS (Most Recent First)
+--------------------------------------------------------------------------------
+1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt
+
+
+================================================================================
+DETAILED REVISION LOG (Most Recent First)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+
+Summary:
+  Initialized the Kanban Python Edition repository in kanban_py on the `main`
+  branch. Added `.gitignore` configured to exclude `data/*.json` from `main`
+  (ensuring all JSON datastore files are isolated to the `private_data` branch),
+  as well as Python bytecode (`__pycache__/`, `*.pyc`), temporary atomic write
+  files (`*.tmp.*`), and macOS artifacts. Initialized `revisions.txt` with a
+  Table of Contents and detailed revision history section.
