@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint
+12. [Batch 5.2] chore: merge origin/main LICENSE into main
+11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint (3a4610d)
 10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt (6de7fbc)
 9.  [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow (0e8136f)
 8.  [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py) (1f6c87b)
@@ -22,7 +23,26 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint
+12. [Batch 5.2] chore: merge origin/main LICENSE into main
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - LICENSE
+  - revisions.txt
+
+Summary:
+  Merged `origin/main` (`6e1f397`) from `https://github.com/k8242/public-kanban-tasks.git`
+  into local `main` using `--allow-unrelated-histories -X ours`:
+  - Preserved the remote `LICENSE` file.
+  - Retained the full local `README.md`.
+  - Updated `revisions.txt` with commit hash `3a4610d` for Batch 5.1 and added Batch 5.2
+    so `git push -u origin main` can fast-forward cleanly.
+
+--------------------------------------------------------------------------------
+11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint (3a4610d)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
