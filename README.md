@@ -18,7 +18,7 @@ A cross-platform Kanban application supporting **Mobile (Phones), iPad/Tablets, 
 Launch the server using Python 3 (zero external dependencies required):
 
 ```bash
-cd /Users/k8242/Coding/antigravity2-local/kanban_py
+cd /path/to/kanban_py
 python3 serve.py
 ```
 
@@ -27,7 +27,7 @@ Open **[http://localhost:8080](http://localhost:8080)** on any phone, tablet, or
 ### Running the Test Suite
 
 ```bash
-cd /Users/k8242/Coding/antigravity2-local/kanban_py
+cd /path/to/kanban_py
 python3 test_kanban.py
 ```
 
@@ -41,7 +41,7 @@ Server events, warnings, and errors are automatically written to a rotating log 
   - Filter by level (`ERROR`, `WARNING`, `INFO`): `http://localhost:8080/api/logs?format=text&level=ERROR`
 - **Via SSH / Terminal**:
   ```bash
-  tail -f /Users/k8242/Coding/antigravity2-local/kanban_py/logs/server.log
+  tail -f /path/to/kanban_py/logs/server.log
   ```
 
 ---

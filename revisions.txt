@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs
+14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders
+13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs (ca6d90d)
 12. [Batch 5.2] chore: merge origin/main LICENSE into main (83679a1)
 11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint (3a4610d)
 10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt (6de7fbc)
@@ -24,7 +25,30 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs
+14. [Batch 5.4] docs: replace personal identifiers in documentation and comments with placeholders
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - LICENSE
+  - README.md
+  - index.html
+  - js/list-view.js
+  - revisions.txt
+
+Summary:
+  Replaced personal username/path references across public documentation,
+  comments, and UI tooltips with generic placeholders:
+  - Replaced local user directory paths in `README.md` with `/path/to/kanban_py`.
+  - Replaced copyright holder identifier in `LICENSE` with `<copyright-holder>`.
+  - Replaced `<github-user>` references in `revisions.txt` documentation entries
+    and removed username prefixes from tooltip strings in `index.html` and
+    `js/list-view.js`.
+
+--------------------------------------------------------------------------------
+13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs (ca6d90d)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
@@ -40,7 +64,7 @@ Files:
 
 Summary:
   Updated all GitHub repository links (`index.html`, `js/list-view.js`, `README.md`,
-  and `test_kanban.py`) to point to `https://github.com/k8242/public-kanban-tasks`.
+  and `test_kanban.py`) to point to `https://github.com/<github-user>/public-kanban-tasks`.
   Added a two-tone SVG Python logo icon button (`btn-python-logs`) immediately to
   the right of the GitHub logo in the app header linking directly to `/api/logs`.
 
@@ -56,7 +80,7 @@ Files:
   - revisions.txt
 
 Summary:
-  Merged `origin/main` (`6e1f397`) from `https://github.com/k8242/public-kanban-tasks.git`
+  Merged `origin/main` (`6e1f397`) from `https://github.com/<github-user>/public-kanban-tasks.git`
   into local `main` using `--allow-unrelated-histories -X ours`:
   - Preserved the remote `LICENSE` file.
   - Retained the full local `README.md`.
