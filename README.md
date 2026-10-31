@@ -2,6 +2,8 @@
 
 GitHub Repository: [https://github.com/k8242/public-kanban-tasks](https://github.com/k8242/public-kanban-tasks)
 
+![Kanban Board Screenshot](assets/screenshot.png)
+
 A cross-platform Kanban application supporting **Mobile (Phones), iPad/Tablets, and Desktop Web**, powered by a **zero-dependency Python 3 backend** (`serve.py`):
 - **Server-Hosted Data Store**: Centralized backend JSON datastore (`data/board.json` and multi-database `data/<name>.json`) with a REST API for automatic multi-device synchronization and persistence.
 - **Branch-Isolated Private Data Versioning (`private_data`)**: All `data/*.json` files are tracked and auto-committed exclusively to the `private_data` Git branch while `main` tracks only application source code and documentation.
