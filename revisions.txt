@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt
+2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/)
+1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt (1ef804d)
 
 
 ================================================================================
@@ -12,12 +13,44 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt
+2. [Batch 1.2] feat: port frontend UI (index.html, manifest.json, css/, js/)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
 Model:  Gemini 4 Argon (Medium)
 Branch: main
+Files:
+  - index.html
+  - manifest.json
+  - css/style.css, css/board.css, css/list-view.css, css/table.css, css/text-view.css
+  - js/models.js, js/app.js, js/board-view.js, js/list-view.js, js/table-view.js,
+    js/text-view.js, js/zoom-canvas.js
+
+Summary:
+  Ported the complete cross-platform Kanban frontend application, including:
+  - Multi-column Kanban Board with pinch-to-zoom whole-tableau scaling, single-state
+    mobile view, priority sorting, and in-place card expansion.
+  - GTD Lists View with smart keyboard entry (^dates, !priorities, #tags),
+    multi-task batch operations, cross-database task copy/move, and 24-color tag
+    palette popup.
+  - Tabular List View with sorting, filtering, 4-line row clamp, and inline state
+    transitions.
+  - Text-Only View with fixed-size monospace rendering and 2-way plain-text sync.
+  - Client-side KanbanStore model with REST API sync (`/api/board`, `/api/databases`,
+    `/api/health`, `/api/reset`, `/api/config`), offline localStorage resilience,
+    Remember The Milk (RTM) JSON import, recurring task engine with completion
+    history heatmap, 30-day trash auto-purge, and Abandoned state tracking.
+
+--------------------------------------------------------------------------------
+1. [Batch 1.1] chore: initialize repository structure, .gitignore, and revisions.txt (1ef804d)
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - .gitignore
+  - revisions.txt
 
 Summary:
   Initialized the Kanban Python Edition repository in kanban_py on the `main`

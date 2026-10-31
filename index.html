@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kanban">
+  <link rel="manifest" href="manifest.json">
+  <title>Kanban — Board, Tabular & Text Views</title>
+  
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/board.css">
+  <link rel="stylesheet" href="css/table.css">
+  <link rel="stylesheet" href="css/text-view.css">
+  <link rel="stylesheet" href="css/list-view.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <button type="button" class="btn btn-secondary btn-toggle-panel" id="btn-toggle-sidebar" title="Toggle Navigation Side Panel (☰ / Ctrl+B)" aria-label="Toggle Navigation Side Panel">
+          <span>☰</span>
+          <span class="btn-sidebar-label">Panel</span>
+        </button>
+        <span class="app-logo">📋</span>
+        <h1 class="app-title">Kanban</h1>
+        <span class="device-indicator" id="device-indicator">Responsive</span>
+      </div>
+
+      <!-- Center View Switcher Tabs (Tablet, iPad & Desktop) -->
+      <nav class="header-nav" aria-label="View Selection">
+        <button class="view-nav-btn active" data-view="board" title="Kanban Board View (1)">
+          <span>📋</span> Board
+        </button>
+        <button class="view-nav-btn" data-view="list" title="Inbox & Lists View (2)">
+          <span>📥</span> Lists
+        </button>
+        <button class="view-nav-btn" data-view="table" title="Tabular List View (3)">
+          <span>📊</span> Tabular List
+        </button>
+        <button class="view-nav-btn" data-view="text" title="Text-Only Outline View (4)">
+          <span>📝</span> Text-Only
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="header-actions">
+        <!-- Multi-Database Selector -->
+        <div class="db-switcher-wrapper" id="db-switcher-wrapper" title="Switch or Manage Task Databases">
+          <span class="db-switcher-icon">🗄️</span>
+          <select id="db-select" class="form-select form-select-sm db-select" title="Active Task Database">
+            <option value="default">default</option>
+          </select>
+          <button type="button" class="btn-db-add" id="btn-db-add" title="Create New Task Database">＋</button>
+          <button type="button" class="btn-db-del" id="btn-db-del" title="Delete Active Task Database" style="display: none;">🗑️</button>
+        </div>
+
+        <div id="server-sync-indicator" class="sync-status-pill" title="Server Datastore Status (Click to re-sync)">
+          <span class="sync-dot"></span>
+          <span class="sync-text">Connecting...</span>
+        </div>
+        <button class="btn btn-primary" id="btn-add-task" title="Add New Task (N)">
+          <span>＋</span> <span>New Task</span>
+        </button>
+        <button class="btn-icon" id="btn-export-json" title="Export Backup JSON">💾</button>
+        <button class="btn-icon" id="btn-import-json" title="Import Backup JSON">📂</button>
+        <button class="btn-icon" id="btn-reset-data" title="Reset Active Database">🔄</button>
+        <button class="btn-icon" id="btn-toggle-theme" title="Toggle Light/Dark Theme">🌙</button>
+        <a href="https://github.com/k8242/tasks_kanban" target="_blank" rel="noopener noreferrer" class="btn-icon btn-github-link" title="GitHub Repository (k8242/tasks_kanban)" aria-label="GitHub Repository">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+        </a>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+      </div>
+    </header>
+
+    <!-- App Body: Shared Collapsible Side Panel + Main Views -->
+    <div id="app-body" class="app-body">
+      <!-- Shared Collapsible Side Panel (Available across ALL views) -->
+      <aside id="app-side-panel" class="gtd-sidebar" aria-label="Navigation Side Panel">
+        <!-- Rendered by SidePanel component in list-view.js -->
+      </aside>
+      <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+      <!-- Main View Switcher Container -->
+      <main class="main-content" id="main-content-area">
+        
+        <!-- VIEW 1: KANBAN BOARD WITH PINCH-TO-ZOOM WHOLE TABLEAU -->
+        <section id="board-view-container" class="view-container active" aria-label="Kanban Board">
+          <!-- Board top controls bar with board-only / bottom-list toggle -->
+          <div class="board-top-controls">
+            <div class="board-mode-toggle-group" role="group" aria-label="Board View Mode">
+              <button type="button" id="btn-kanban-board-only" class="btn-mode-toggle active" title="Show only the Kanban board">
+                <span>📋</span> Board Only
+              </button>
+              <button type="button" id="btn-kanban-split-view" class="btn-mode-toggle" title="Show Kanban board with bottom list view">
+                <span>📑</span> Board + Bottom List
+              </button>
+            </div>
+
+            <!-- Single State vs All Columns Switcher (Phone Screen Support) -->
+            <div class="board-state-filter-wrapper" role="group" aria-label="Tableau Column State Focus">
+              <span class="board-state-filter-label">Columns:</span>
+              <div id="board-state-filter-pills" class="board-state-filter-pills">
+                <!-- Dynamically populated: [All] [Backlog] [In Progress] [In Review] [Done] -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Board Split Container -->
+          <div id="board-split-container" class="board-split-container mode-board-only">
+            <div id="board-viewport-section" class="board-viewport-section">
+              <div class="zoom-touch-hint">
+                <span>🖐️</span> Pinch screen or tap <strong>Fit Tableau</strong> to view all columns
+              </div>
+              <div id="zoom-viewport" class="zoom-viewport">
+                <div id="zoom-canvas" class="zoom-canvas">
+                  <!-- Rendered by BoardView -->
+                </div>
+              </div>
+
+              <!-- Floating Zoom Controls Bar (Mobile & Desktop) -->
+              <div id="zoom-controls-bar" class="zoom-controls-bar" role="toolbar" aria-label="Zoom Controls">
+                <button id="btn-zoom-fit" class="btn-zoom-fit" title="Fit Entire Tableau on Screen (F)">
+                  <span>⛶</span> Fit Tableau
+                </button>
+                <button id="btn-zoom-out" class="zoom-btn-circle" title="Zoom Out (-)">−</button>
+                <span id="zoom-hud-percent" class="zoom-hud-percent">100%</span>
+                <button id="btn-zoom-in" class="zoom-btn-circle" title="Zoom In (+)">+</button>
+                <button id="btn-zoom-reset" class="zoom-btn-circle" title="Reset Zoom to 100%">1:1</button>
+              </div>
+            </div>
+
+            <!-- Collapsible Bottom List View -->
+            <div id="kanban-bottom-list-section" class="kanban-bottom-list-section" style="display: none;">
+              <div class="bottom-list-header">
+                <div class="bottom-list-title-group">
+                  <span class="bottom-list-icon">📑</span>
+                  <span class="bottom-list-title">Bottom Tasks Stream</span>
+                  <span id="kanban-bottom-list-count" class="bottom-list-count-badge">0 tasks</span>
+                </div>
+                <div class="bottom-list-actions">
+                  <select id="kanban-bottom-list-filter" class="form-select form-select-sm" aria-label="Filter bottom tasks">
+                    <option value="all">All Columns</option>
+                    <option value="backlog">Backlog</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="in_review">In Review</option>
+                    <option value="done">Done</option>
+                    <option value="pending">Pending</option>
+                    <option value="archive">Archive</option>
+                    <option value="abandoned">Abandoned</option>
+                  </select>
+                  <button class="btn-icon btn-sm" id="btn-close-bottom-list" title="Close Bottom List (Switch to Board Only)">✕</button>
+                </div>
+              </div>
+              <div id="kanban-bottom-list-stream" class="kanban-bottom-list-stream">
+                <!-- Rendered bottom tasks list -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2: GTD INBOX, TODAY, LISTS & TAGS VIEW -->
+        <section id="list-view-container" class="view-container" aria-label="Inbox and Lists View">
+          <!-- Rendered by ListView -->
+        </section>
+
+        <!-- VIEW 3: TABULAR LIST OF TASKS & STATES -->
+        <section id="table-view-container" class="view-container" aria-label="Tabular Task List">
+          <!-- Rendered by TableView -->
+        </section>
+
+        <!-- VIEW 4: TEXT-ONLY & OUTLINE REPRESENTATION -->
+        <section id="text-view-container" class="view-container" aria-label="Text Only Task Outline">
+          <!-- Rendered by TextView -->
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Phone Screens) -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+      <button class="mobile-nav-btn view-nav-btn active" data-view="board">
+        <span class="nav-icon">📋</span>
+        <span>Board</span>
+      </button>
+      <button class="mobile-nav-btn view-nav-btn" data-view="list">
+        <span class="nav-icon">📥</span>
+        <span>Lists</span>
+      </button>
+      <button class="mobile-nav-btn view-nav-btn" data-view="table">
+        <span class="nav-icon">📊</span>
+        <span>Table</span>
+      </button>
+      <button class="mobile-nav-btn view-nav-btn" data-view="text">
+        <span class="nav-icon">📝</span>
+        <span>Text-Only</span>
+      </button>
+    </nav>
+
+    <!-- Task Creation & Edit Modal Dialog (Expanded Layout with Right-Side Properties Panel) -->
+    <div id="task-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+      <div class="modal-dialog modal-dialog-expanded">
+        <div class="modal-header">
+          <h3 id="modal-heading">Create New Task</h3>
+          <button type="button" class="btn-icon" id="modal-close-btn" aria-label="Close modal">✕</button>
+        </div>
+        <form id="task-form">
+          <div class="modal-body modal-body-split">
+            <!-- Left Main Content Panel: Title, Reference URL, Description & Notes, Timestamps -->
+            <div class="modal-main-panel">
+              <div class="form-group">
+                <label for="modal-task-title">Task Title *</label>
+                <input type="text" id="modal-task-title" class="form-input" placeholder="What needs to be done?" required>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-url">Reference URL (Optional)</label>
+                <input type="url" id="modal-task-url" class="form-input" placeholder="https://example.com/spec">
+              </div>
+
+              <div class="form-group form-group-desc">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label for="modal-task-desc" style="margin-bottom: 0;">Description & Notes</label>
+                  <label style="font-size: 12px; font-weight: normal; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="checkbox" id="modal-task-markdown"> Format as Markdown
+                  </label>
+                </div>
+                <textarea id="modal-task-desc" class="form-textarea form-textarea-expanded" placeholder="Add detailed notes or requirements (Markdown formatting supported)..."></textarea>
+              </div>
+
+              <div id="modal-task-timestamps" class="modal-timestamps" style="display: none;">
+                <span id="modal-created-time"></span>
+                <span id="modal-updated-time"></span>
+                <span id="modal-completed-time" style="display: none;"></span>
+              </div>
+            </div>
+
+            <!-- Right Side Panel: All Drop Down Fields and Task Properties -->
+            <div class="modal-side-panel">
+              <div class="side-panel-heading">Properties & Dropdowns</div>
+
+              <div class="form-group" id="modal-completed-group" style="display: none;">
+                <label class="detail-meta-label">Completed Date</label>
+                <span id="modal-task-completed" class="detail-meta-value" style="color: var(--accent-success, #22c55e); font-weight: 600;">—</span>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-column">State / Column</label>
+                <select id="modal-task-column" class="form-select"></select>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-priority">Priority</label>
+                <select id="modal-task-priority" class="form-select">
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-repeat">Repeat Cadence</label>
+                <select id="modal-task-repeat" class="form-select">
+                  <option value="none">No Repeat</option>
+                  <option value="weekly">Weekly (Every week)</option>
+                  <option value="monthly">Monthly (Every month)</option>
+                  <option value="annually">Annually (Every year)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="modal-repeat-history-btn-wrapper" style="display: none;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-view-repeat-history" style="width: 100%;">
+                  📊 View History
+                </button>
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-due">Due Date</label>
+                <input type="date" id="modal-task-due" class="form-input">
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-assignee">Assignee</label>
+                <input type="text" id="modal-task-assignee" class="form-input" placeholder="Name or @handle">
+              </div>
+
+              <div class="form-group">
+                <label for="modal-task-tags">Tags (comma separated)</label>
+                <input type="text" id="modal-task-tags" class="form-input" placeholder="e.g. mobile, frontend, v1">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <div class="modal-footer-left">
+              <button type="button" class="btn btn-danger" id="modal-delete-btn" style="display: none;">Delete</button>
+              <button type="button" class="btn btn-outline" id="modal-gcal-btn" style="display: none;" title="Add task as Google Calendar entry with link back">📅 Add to Calendar</button>
+            </div>
+            <div class="modal-footer-right">
+              <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="modal-save-btn">Save Task</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Expanded Single Task Detail View Modal (Without entering edit mode) -->
+    <div id="task-detail-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-task-title">
+      <div class="modal-dialog modal-dialog-detail modal-dialog-expanded">
+        <div class="modal-header">
+          <div class="detail-header-left">
+            <span id="detail-task-column-badge" class="detail-badge detail-column-badge"></span>
+            <span id="detail-task-priority-badge" class="detail-badge detail-priority-badge"></span>
+          </div>
+          <div class="detail-header-actions">
+            <button type="button" class="btn-icon" id="detail-modal-close-btn" aria-label="Close details">✕</button>
+          </div>
+        </div>
+        <div class="modal-body modal-body-split detail-modal-body">
+          <!-- Left Main Content Panel -->
+          <div class="modal-main-panel detail-main-panel">
+            <h2 id="detail-task-title" class="detail-title"></h2>
+
+            <div class="detail-section">
+              <span class="detail-meta-label">Description & Notes</span>
+              <div id="detail-task-desc" class="detail-desc-content markdown-content"></div>
+            </div>
+
+            <div class="detail-section" id="detail-url-section">
+              <span class="detail-meta-label">Reference URL</span>
+              <div id="detail-task-url" class="detail-meta-value">—</div>
+            </div>
+
+            <div class="detail-timestamps-footer">
+              <span id="detail-created-time"></span>
+              <span id="detail-updated-time"></span>
+              <span id="detail-completed-time" style="display: none;"></span>
+            </div>
+          </div>
+
+          <!-- Right Side Panel: All Drop Down Fields and Properties -->
+          <div class="modal-side-panel detail-side-panel">
+            <div class="side-panel-heading">Properties & Dropdowns</div>
+
+            <div class="form-group" id="detail-completed-group" style="display: none;">
+              <label class="detail-meta-label">Completed Date</label>
+              <span id="detail-task-completed" class="detail-meta-value" style="color: var(--accent-success, #22c55e); font-weight: 600;">—</span>
+            </div>
+
+            <div class="form-group">
+              <label for="detail-select-column">State / Column</label>
+              <select id="detail-select-column" class="form-select"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="detail-select-priority">Priority</label>
+              <select id="detail-select-priority" class="form-select">
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="detail-select-repeat">Repeat Cadence</label>
+              <select id="detail-select-repeat" class="form-select">
+                <option value="none">No Repeat</option>
+                <option value="weekly">Weekly (Every week)</option>
+                <option value="monthly">Monthly (Every month)</option>
+                <option value="annually">Annually (Every year)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="detail-repeat-history-btn-wrapper" style="display: none;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-detail-view-repeat-history" style="width: 100%;">
+                📊 View History
+              </button>
+            </div>
+
+            <div class="form-group">
+              <label class="detail-meta-label">Due Date</label>
+              <span id="detail-task-due" class="detail-meta-value">—</span>
+            </div>
+
+            <div class="form-group">
+              <label class="detail-meta-label">Assignee</label>
+              <span id="detail-task-assignee" class="detail-meta-value">—</span>
+            </div>
+
+            <div class="form-group" id="detail-tags-section">
+              <label class="detail-meta-label">Tags</label>
+              <div id="detail-task-tags" class="detail-tags-container"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-left">
+            <button type="button" class="btn btn-outline" id="btn-detail-gcal">📅 Add to Google Calendar</button>
+          </div>
+          <div class="modal-footer-right">
+            <button type="button" class="btn btn-secondary" id="btn-detail-close">Close</button>
+            <button type="button" class="btn btn-primary" id="btn-detail-switch-edit">✏️ Edit Task</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Graphical Repeat History Popup Modal -->
+    <div id="repeat-history-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="repeat-history-heading">
+      <div class="modal-dialog modal-dialog-compact">
+        <div class="modal-header">
+          <div class="modal-heading-group">
+            <h3 id="repeat-history-heading">🔁 Repeat Task History</h3>
+            <span id="repeat-history-subtitle" class="text-muted" style="font-size: 12px; display: block; margin-top: 2px;"></span>
+          </div>
+          <button type="button" class="btn-icon" id="repeat-history-close-btn" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="repeat-history-stats" class="repeat-history-stats"></div>
+          <div class="repeat-history-chart-wrapper">
+            <div id="repeat-history-chart-title" class="repeat-chart-title">Completion Heatmap</div>
+            <div id="repeat-history-grid" class="repeat-grid-container"></div>
+            <div class="repeat-grid-legend">
+              <span class="legend-item"><span class="legend-swatch empty"></span> Incomplete / Pending</span>
+              <span class="legend-item"><span class="legend-swatch completed"></span> Completed</span>
+            </div>
+          </div>
+          <div id="repeat-history-list" class="repeat-history-list"></div>
+        </div>
+        <div class="modal-footer" style="justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" id="repeat-history-done-btn">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- Create Database Modal with Copy-From Dropdown -->
+    <div id="create-db-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-db-heading">
+      <div class="modal-dialog modal-dialog-compact" style="max-width: 440px;">
+        <div class="modal-header">
+          <h3 id="create-db-heading">Create Task Database</h3>
+          <button type="button" class="btn-icon" id="btn-close-create-db" aria-label="Close modal">✕</button>
+        </div>
+        <form id="create-db-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="new-db-name">Database Name *</label>
+              <input type="text" id="new-db-name" class="form-input" placeholder="e.g. work, personal, sprint1" required pattern="[a-zA-Z0-9_\-]+" title="Letters, numbers, underscores and hyphens only">
+              <span class="form-help" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Letters, numbers, hyphens, and underscores only.</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 14px;">
+              <label for="new-db-copy-from">Copy Tasks & Configuration From</label>
+              <select id="new-db-copy-from" class="form-select">
+                <option value="none">Empty Database (No tasks)</option>
+              </select>
+            </div>
+
+            <!-- Existing Databases Management Section -->
+            <div id="existing-dbs-section" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 8px;">Existing Databases</label>
+              <div id="existing-dbs-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-left"></div>
+            <div class="modal-footer-right">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-create-db">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn-submit-create-db">Create Database</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Transfer (Copy/Move) Tasks to Database Modal -->
+    <div id="batch-transfer-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="batch-transfer-heading">
+      <div class="modal-dialog modal-dialog-compact" style="max-width: 440px;">
+        <div class="modal-header">
+          <h3 id="batch-transfer-heading">🗄️ Copy or Move to Database</h3>
+          <button type="button" class="btn-icon" id="btn-close-batch-transfer" aria-label="Close modal">✕</button>
+        </div>
+        <form id="batch-transfer-form">
+          <div class="modal-body">
+            <div id="batch-transfer-summary" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+              Transfer selected tasks from <strong id="batch-transfer-source-db">default</strong> to another database.
+            </div>
+
+            <div class="form-group">
+              <label>Transfer Action *</label>
+              <div style="display: flex; gap: 16px; margin-top: 6px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                  <input type="radio" name="batch-transfer-mode" value="move" id="transfer-mode-move" checked />
+                  <span>➡️ Move (remove from here)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                  <input type="radio" name="batch-transfer-mode" value="copy" id="transfer-mode-copy" />
+                  <span>📋 Copy (keep here too)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 14px;">
+              <label for="batch-transfer-dest-db">Destination Database *</label>
+              <select id="batch-transfer-dest-db" class="form-select">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="form-group" id="batch-transfer-new-db-group" style="margin-top: 10px; display: none;">
+              <label for="batch-transfer-new-db-name">New Database Name *</label>
+              <input type="text" id="batch-transfer-new-db-name" class="form-input" placeholder="e.g. work, sprint2, archive" pattern="[a-zA-Z0-9_\-]+" />
+              <span class="form-help" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Letters, numbers, hyphens, and underscores only.</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-left"></div>
+            <div class="modal-footer-right">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-batch-transfer">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn-submit-batch-transfer">Move Tasks</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Import Tasks & Backups Modal (Kanban & Remember The Milk) -->
+    <div id="import-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="import-modal-heading">
+      <div class="modal-dialog modal-dialog-compact" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 id="import-modal-heading">📥 Import Tasks & Backups</h3>
+          <button type="button" class="btn-icon" id="btn-close-import-modal" aria-label="Close modal">✕</button>
+        </div>
+        <form id="import-tasks-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Select JSON File *</label>
+              <div class="import-file-selector" style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn btn-secondary" id="btn-trigger-file-pick">📂 Choose File...</button>
+                <span id="import-file-name-label" style="font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px;">No file chosen</span>
+              </div>
+            </div>
+
+            <!-- Preview & Format Detection Badge -->
+            <div id="import-format-preview" class="import-format-box" style="display: none; margin-top: 14px; padding: 12px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px;">
+              <div style="font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 4px;" id="import-detected-title">Format Detected</div>
+              <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;" id="import-detected-details">File details...</div>
+            </div>
+
+            <!-- Destination Database Selector -->
+            <div class="form-group" style="margin-top: 16px;">
+              <label>Target Database</label>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                  <input type="radio" name="import-dest" value="new" id="import-dest-new" checked>
+                  <span>Create new database:</span>
+                  <input type="text" id="import-target-db-name" class="form-input" value="rtm" style="width: 140px; padding: 4px 8px; font-size: 13px;" pattern="[a-zA-Z0-9_\-]+" placeholder="db name">
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                  <input type="radio" name="import-dest" value="current" id="import-dest-current">
+                  <span>Import into active database (<strong id="import-active-db-label">default</strong>)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Nuances checklist for RTM -->
+            <div id="import-rtm-options-info" style="display: none; margin-top: 14px; font-size: 11px; color: var(--text-muted); background: var(--bg-hover); padding: 10px; border-radius: 6px; line-height: 1.5;">
+              <div>✔ Custom lists preserved as tags</div>
+              <div>✔ Completed tasks moved into Archive</div>
+              <div>✔ Task notes, Markdown, and subtask parent links preserved</div>
+              <div>✔ Tag palette colors and repeat cadences converted</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-left"></div>
+            <div class="modal-footer-right">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-import-modal">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn-submit-import" disabled>Import Tasks</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/models.js"></script>
+  <script src="js/zoom-canvas.js"></script>
+  <script src="js/board-view.js"></script>
+  <script src="js/list-view.js"></script>
+  <script src="js/table-view.js"></script>
+  <script src="js/text-view.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
