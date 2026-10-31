@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers)
+8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py)
+7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
 6. [Batch 3.2] feat: implement private_data branch-isolated Git auto-commit engine in serve.py (ea4e210)
 5. [Batch 3.1] feat: implement core Python backend server (serve.py) (2cc0dc9)
 4. [Batch 2.1] chore(data): seed initial data/*.json files on private_data branch (86499f3)
@@ -18,7 +19,31 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers)
+8. [Batch 4.1] test: add comprehensive Python test suite (test_kanban.py)
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - test_kanban.py
+  - revisions.txt
+
+Summary:
+  Created the comprehensive Python test suite (`test_kanban.py`) verifying:
+  - Presence and non-empty integrity of all HTML, CSS, JS, Python, and JSON files.
+  - Python server request handling (`InMemoryHandler`) for `/api/health`, `/api/board`,
+    `/api/databases`, and database protection rules (`default` and `board` cannot be
+    overwritten or deleted).
+  - Strict Git branch isolation: verifies that `data/*.json` modifications and custom
+    database operations commit exclusively to `refs/heads/private_data` with
+    Agent & Model metadata while leaving `refs/heads/main` completely untouched.
+  - Responsive Fit-Tableau zoom scaling across phone, iPad, and desktop viewports.
+  - All UI, CSS, GTD Lists, Tabular List, Text-Only, Recurring Task, Trash, Abandoned
+    state, and JavaScriptCore (`jsc`) smart parser assertions.
+
+--------------------------------------------------------------------------------
+7. [Batch 3.3] refactor: readability cleanup for serve.py (type hints, docstrings, helpers) (1f13e0c)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity
