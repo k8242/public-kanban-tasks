@@ -4,7 +4,8 @@ KANBAN PYTHON EDITION — REVISION HISTORY
 
 TABLE OF CONTENTS (Most Recent First)
 --------------------------------------------------------------------------------
-12. [Batch 5.2] chore: merge origin/main LICENSE into main
+13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs
+12. [Batch 5.2] chore: merge origin/main LICENSE into main (83679a1)
 11. [Batch 5.1] feat: add rotating file logger (logs/server.log) and remote /api/logs endpoint (3a4610d)
 10. [Batch 4.3] refactor: readability cleanup for test_kanban.py and finalize revisions.txt (6de7fbc)
 9.  [Batch 4.2] docs: add README.md for Python backend and private_data branch workflow (0e8136f)
@@ -23,7 +24,28 @@ DETAILED REVISION LOG (Most Recent First)
 ================================================================================
 
 --------------------------------------------------------------------------------
-12. [Batch 5.2] chore: merge origin/main LICENSE into main
+13. [Batch 5.3] feat: link GitHub repo to public-kanban-tasks and add Python logo link to /api/logs
+--------------------------------------------------------------------------------
+Date:   2026-10-31
+Agent:  Antigravity
+Model:  Gemini 4 Argon (Medium)
+Branch: main
+Files:
+  - index.html
+  - css/style.css
+  - js/list-view.js
+  - README.md
+  - test_kanban.py
+  - revisions.txt
+
+Summary:
+  Updated all GitHub repository links (`index.html`, `js/list-view.js`, `README.md`,
+  and `test_kanban.py`) to point to `https://github.com/k8242/public-kanban-tasks`.
+  Added a two-tone SVG Python logo icon button (`btn-python-logs`) immediately to
+  the right of the GitHub logo in the app header linking directly to `/api/logs`.
+
+--------------------------------------------------------------------------------
+12. [Batch 5.2] chore: merge origin/main LICENSE into main (83679a1)
 --------------------------------------------------------------------------------
 Date:   2026-10-31
 Agent:  Antigravity

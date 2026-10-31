@@ -374,7 +374,8 @@ html, body {
   background-color: var(--bg-subtle);
 }
 
-.btn-github-link {
+.btn-github-link,
+.btn-python-logs {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -382,12 +383,14 @@ html, body {
   color: var(--text-primary);
 }
 
-.btn-github-link:hover {
+.btn-github-link:hover,
+.btn-python-logs:hover {
   background-color: var(--bg-subtle);
   color: var(--accent-primary);
 }
 
-.btn-github-link svg {
+.btn-github-link svg,
+.btn-python-logs svg {
   display: block;
 }
 

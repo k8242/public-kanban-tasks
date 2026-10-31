@@ -1,6 +1,6 @@
 # Kanban App (Python Backend Edition)
 
-GitHub Repository: [https://github.com/k8242/tasks_kanban](https://github.com/k8242/tasks_kanban)
+GitHub Repository: [https://github.com/k8242/public-kanban-tasks](https://github.com/k8242/public-kanban-tasks)
 
 A cross-platform Kanban application supporting **Mobile (Phones), iPad/Tablets, and Desktop Web**, powered by a **zero-dependency Python 3 backend** (`serve.py`):
 - **Server-Hosted Data Store**: Centralized backend JSON datastore (`data/board.json` and multi-database `data/<name>.json`) with a REST API for automatic multi-device synchronization and persistence.

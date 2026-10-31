@@ -334,7 +334,8 @@ def test_feature_requirements(
 
     sample_task = sample_data["tasks"][0]
     assert sample_task.get("createdAt") and sample_task.get("updatedAt") and "url" in sample_task
-    assert "https://github.com/k8242/tasks_kanban" in html_content and "Universal Kanban" not in html_content
+    assert "https://github.com/k8242/public-kanban-tasks" in html_content and "Universal Kanban" not in html_content
+    assert 'href="/api/logs"' in html_content and "btn-python-logs" in html_content
     assert "getTagColor" in models_js and "setTagColor" in models_js and "renameTag" in models_js
     assert "this.trash" in models_js and "purgeTrash" in models_js and "restoreTask" in models_js
     assert "computeNextDueDate" in models_js and "completionHistory" in models_js
